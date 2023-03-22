@@ -2,22 +2,27 @@ const fs = require('fs');
 const csv = require('csvtojson');
 const { Parser } = require('json2csv');
 
-const inputFile = 'MERGED Member Databases 2023-03-02.csv';
+const inputFile = 'MERGED Member Databases.csv';
 
 (async () => {
 	const members = {};
+	const duplicates = [];
 
-	await csv()
-		.fromFile(inputFile)
-		.then((rawMembers) => {
-			rawMembers.forEach((member) => {
-				if (members[member.memberships]) {
-					members[member.memberships].push(member);
-				} else {
-					members[member.memberships] = [member];
-				}
-			});
-		});
+	const rawMembers = await csv().fromFile(inputFile);
+
+	rawMembers.forEach((member) => {
+		if (!members[member.memberships]) {
+			members[member.memberships] = [member];
+		} else if (
+			members[member.memberships].some((el) => {
+				el.email.trim() == member.email.trim();
+			})
+		) {
+			duplicates.push(member);
+		} else {
+			members[member.memberships].push(member);
+		}
+	});
 
 	csvOptions = {
 		fields: [
@@ -34,5 +39,6 @@ const inputFile = 'MERGED Member Databases 2023-03-02.csv';
 		);
 	});
 
+	console.log(duplicates);
 	// fs.writeFileSync('full.csv', fullMemberCSV);
 })();
